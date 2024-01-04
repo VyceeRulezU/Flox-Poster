@@ -1,0 +1,44 @@
+<?php
+/*
+Plugin Name: FiloxPoster
+Description: A simple plugin for posting content.
+Version: 1.0
+Author: Victor Ironali
+*/
+
+// Plugin code goes here
+
+// Add shortcode
+function flx_post_shortcode() {
+    ob_start(); // Start output buffering
+
+    if (is_user_logged_in()) {
+        // Display form for logged-in users
+        include('post-form.php');
+    } else {
+        // Display login link for non-logged-in users
+        echo '<a href="' . wp_login_url() . '">Login to post</a>';
+    }
+
+    return ob_get_clean(); // Return the buffered content
+}
+add_shortcode('flx_post_shortcode', 'flx_post_shortcode');
+
+// Add REST endpoint to check if title exists
+function filoxposter_check_title_exists($data) {
+    $title = sanitize_text_field($data['title']);
+    $existing_post = get_page_by_title($title, OBJECT, 'post');
+
+    return rest_ensure_response(array('exists' => (bool)$existing_post));
+}
+
+add_action('rest_api_init', function () {
+    register_rest_route('filoxposter/v1', '/check-title', array(
+        'methods'  => 'POST',
+        'callback' => 'filoxposter_check_title_exists',
+    ));
+});
+
+?>
+
+
